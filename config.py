@@ -1,0 +1,6 @@
+LINKEDIN_USERNAME = "mdfarukt222@gmail.com"
+LINKEDIN_PASSWORD = "M22f&farrk@32"
+LINKEDIN_EVENT_LINK = "https://www.linkedin.com/events/7228272784806662144/comments/"
+COOKIES_FILE = "linkedin_cookies.pkl"
+INVITED_ATTENDEES_PICKLE = "invited_attendees.pkl"
+INVITED_ATTENDEES_CSV = "invited_attendees_2.csv"
