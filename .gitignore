@@ -161,4 +161,12 @@ cython_debug/
 research/
 output/
 pavithra demo test/
+test/
+test project
+new_test.py
+invited_attendees_2.csv
+invited_attendees.csv
 config.py
+invited_attendees.pkl
+link_login.py
+linkedin_cookies.pkl
