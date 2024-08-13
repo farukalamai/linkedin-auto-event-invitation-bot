@@ -9,8 +9,8 @@ This script automates the process of inviting attendees to a LinkedIn event usin
 First, clone the repository to your local machine:
 
 ```bash
-git clone https://github.com/yourusername/linkedin-inviter.git
-cd linkedin-inviter
+git clone https://github.com/farukalamai/linkedin-event-auto-inviter.git
+cd linkedin-event-auto-inviter
 ```
 ### 2. Set Up a Virtual Environment
 On macOS/Linux:
