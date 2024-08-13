@@ -13,6 +13,16 @@ git clone https://github.com/yourusername/linkedin-inviter.git
 cd linkedin-inviter
 ```
 ### 2. Set Up a Virtual Environment
+On macOS/Linux:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+On Windows:
+```bash
+python -m venv venv
+venv\Scripts\activate
+```
 
 ### 3. Install Dependencies
 ```bash
@@ -22,10 +32,10 @@ pip install -r requirements.txt
 ### 4. Configure the Script
 Before running the script, you need to edit the `config.py` file to include your LinkedIn credentials, event URL, and other configurations.
 
-`LINKEDIN_EMAIL`: Your LinkedIn email address.
-`LINKEDIN_PASSWORD`: Your LinkedIn password.
-`LINKEDIN_EVENT_URL`: The URL of the LinkedIn event you want to invite attendees to.
-`MAX_INVITES`: The maximum number of invitations to send per run.
+- `LINKEDIN_EMAIL`: Your LinkedIn email address.
+- `LINKEDIN_PASSWORD`: Your LinkedIn password.
+- `LINKEDIN_EVENT_URL`: The URL of the LinkedIn event you want to invite attendees to.
+- `MAX_INVITES`: The maximum number of invitations to send per run.
 
 ### 5. Running the Script
 ```bash
