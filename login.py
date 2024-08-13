@@ -4,12 +4,22 @@ from selenium.webdriver.support import expected_conditions as EC
 import pickle
 import os
 import time
-from config import LINKEDIN_EMAIL, LINKEDIN_PASSWORD, COOKIES_FILE
+from config import LINKEDIN_EMAIL, LINKEDIN_PASSWORD, COOKIES_FILE, LOG_FILE_PATH
 from utils import wait_for_internet_connection  # Import the new function
+import logging
+
+# Set up logging
+logging.basicConfig(
+    filename=LOG_FILE_PATH,
+    level=logging.DEBUG,  # You can change this to INFO or ERROR as needed
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
 
 def login_and_save_cookies(driver):
     wait_for_internet_connection()  # Ensure internet is connected
 
+    logging.info("Attempting to log in to LinkedIn.")
+    
     # Open LinkedIn login page
     driver.get("https://www.linkedin.com/login")
 
@@ -18,7 +28,6 @@ def login_and_save_cookies(driver):
     username.send_keys(LINKEDIN_EMAIL)
     time.sleep(5)
     
-
     # Enter password
     password = driver.find_element(By.ID, "password")
     password.send_keys(LINKEDIN_PASSWORD)
@@ -32,7 +41,7 @@ def login_and_save_cookies(driver):
         WebDriverWait(driver, 120).until(
             EC.url_contains("linkedin.com/feed")
         )
-        print("Login successful.")
+        logging.info("Login successful.")
         time.sleep(5)
 
         # Save the cookies
@@ -40,25 +49,24 @@ def login_and_save_cookies(driver):
         if cookies:
             with open(COOKIES_FILE, "wb") as cookies_file:
                 pickle.dump(cookies, cookies_file)
-            print("Cookies saved successfully.")
+            logging.info("Cookies saved successfully.")
     except Exception as e:
-        print(f"Login failed or timed out: {e}")
+        logging.error(f"Login failed or timed out: {e}")
         driver.quit()
 
 def load_cookies(driver):
     wait_for_internet_connection()  # Ensure internet is connected
-    
+
     if os.path.exists(COOKIES_FILE):
         driver.get("https://www.linkedin.com")
-
 
         with open(COOKIES_FILE, "rb") as cookies_file:
             cookies = pickle.load(cookies_file)
             for cookie in cookies:
                 driver.add_cookie(cookie)
         driver.refresh()  # Refresh to apply cookies
-        print("Cookies loaded successfully.")
+        logging.info("Cookies loaded successfully.")
         
     else:
-        print("No cookies found, logging in manually.")
+        logging.warning("No cookies found, logging in manually.")
         login_and_save_cookies(driver)
