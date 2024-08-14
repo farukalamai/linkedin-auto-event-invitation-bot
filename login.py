@@ -4,16 +4,9 @@ from selenium.webdriver.support import expected_conditions as EC
 import pickle
 import os
 import time
-from config import LINKEDIN_EMAIL, LINKEDIN_PASSWORD, COOKIES_FILE, LOG_FILE_PATH
+from config import LINKEDIN_EMAIL, LINKEDIN_PASSWORD, COOKIES_FILE
 from utils import wait_for_internet_connection  # Import the new function
 import logging
-
-# Set up logging
-logging.basicConfig(
-    filename=LOG_FILE_PATH,
-    level=logging.DEBUG,  # You can change this to INFO or ERROR as needed
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
 
 def login_and_save_cookies(driver):
     wait_for_internet_connection()  # Ensure internet is connected

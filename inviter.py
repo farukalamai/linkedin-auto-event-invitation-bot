@@ -7,19 +7,14 @@ import pickle
 import os
 import csv
 import logging
-from config import LINKEDIN_EVENT_URL, INVITED_ATTENDEES_FILE, INVITED_ATTENDEES_CSV, LOG_FILE_PATH
 from utils import wait_for_internet_connection  # Import the new function
-
-# Set up logging
-logging.basicConfig(
-    filename=LOG_FILE_PATH,
-    level=logging.DEBUG,  # You can change this to INFO or ERROR as needed
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
+from config import INVITED_ATTENDEES_FILE
 
 class LinkedInInviter:
-    def __init__(self, driver):
+    def __init__(self, driver, event_url, csv_file_path):
         self.driver = driver
+        self.event_url = event_url
+        self.csv_file_path = csv_file_path
         self.invited_attendees = set()
         self.attendees_selected = 0
         self.load_invited_attendees()
@@ -28,25 +23,27 @@ class LinkedInInviter:
         invited_attendees = set()
 
         # Load from CSV file
-        if os.path.exists(INVITED_ATTENDEES_CSV):
-            with open(INVITED_ATTENDEES_CSV, mode='r', newline='', encoding='utf-8') as file:
+        if os.path.exists(self.csv_file_path):
+            with open(self.csv_file_path, mode='r', newline='', encoding='utf-8') as file:
                 reader = csv.reader(file)
+                next(reader, None)  # Skip the header
                 invited_attendees = set(row[0] for row in reader)  # Read all previously invited names
 
-        # Load from Pickle file
-        if os.path.exists(INVITED_ATTENDEES_FILE):
-            with open(INVITED_ATTENDEES_FILE, "rb") as f:
-                invited_attendees_pickle_file = pickle.load(f)
-                invited_attendees.update(invited_attendees_pickle_file)
+        self.invited_attendees = invited_attendees
 
-        return invited_attendees
+    def save_new_invites(self, new_invites):
+        with open(self.csv_file_path, mode='a', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            writer.writerows(new_invites)
 
-    def save_invited_attendees(self):
-        with open(INVITED_ATTENDEES_FILE, "wb") as f:
-            pickle.dump(list(self.invited_attendees), f)
-
+        # Load from CSV file
+        # if os.path.exists(self.csv_file_path):
+        #     with open(self.csv_file_path, mode='r', newline='', encoding='utf-8') as file:
+        #         reader = csv.reader(file)
+        #         invited_attendees = set(row[0] for row in reader)  # Read all previously invited names
+        
     def click_invite_list_item(self):
-        self.driver.get(LINKEDIN_EVENT_URL)
+        self.driver.get(self.event_url)
         time.sleep(5)
 
         try:
@@ -137,7 +134,6 @@ class LinkedInInviter:
                         logging.error(f"Encountered an issue with an element: {e}")
                         continue
 
-            self.save_invited_attendees()
             self.save_new_invites(new_invites)
             logging.info(f"Finished inviting {self.attendees_selected} profiles.")
             return self.attendees_selected
@@ -145,11 +141,6 @@ class LinkedInInviter:
         except TimeoutException:
             logging.error("Element not found within the given time")
             return 0
-
-    def save_new_invites(self, new_invites):
-        with open(INVITED_ATTENDEES_CSV, mode='a', newline='', encoding='utf-8') as file:
-            writer = csv.writer(file)
-            writer.writerows(new_invites)
 
     def click_invite_button(self):
         try:
