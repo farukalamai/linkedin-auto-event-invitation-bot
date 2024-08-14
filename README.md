@@ -34,7 +34,7 @@ Before running the script, you need to edit the `config.py` file to include your
 
 - `LINKEDIN_EMAIL`: Your LinkedIn email address.
 - `LINKEDIN_PASSWORD`: Your LinkedIn password.
-- `LINKEDIN_EVENT_URL`: The URL of the LinkedIn event you want to invite attendees to.
+- `LINKEDIN_EVENT_URLS`: URLS of the LinkedIn events.
 - `MAX_INVITES`: The maximum number of invitations to send per run.
 
 ### 5. Running the Script
