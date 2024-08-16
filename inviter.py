@@ -8,7 +8,11 @@ import os
 import csv
 import logging
 from utils import wait_for_internet_connection  # Import the new function
-from config import INVITED_ATTENDEES_FILE
+from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
+
+from time import sleep
+def sleep_minutes(minutes):
+    sleep(minutes * 60)
 
 class LinkedInInviter:
     def __init__(self, driver, event_url, csv_file_path):
@@ -36,15 +40,9 @@ class LinkedInInviter:
             writer = csv.writer(file)
             writer.writerows(new_invites)
 
-        # Load from CSV file
-        # if os.path.exists(self.csv_file_path):
-        #     with open(self.csv_file_path, mode='r', newline='', encoding='utf-8') as file:
-        #         reader = csv.reader(file)
-        #         invited_attendees = set(row[0] for row in reader)  # Read all previously invited names
-        
     def click_invite_list_item(self):
         self.driver.get(self.event_url)
-        time.sleep(5)
+        time.sleep(3)
 
         try:
             share_button = WebDriverWait(self.driver, 20).until(
@@ -64,7 +62,7 @@ class LinkedInInviter:
             return False
 
     def select_profiles_to_invite(self, max_invites=5):
-        time.sleep(5)
+        time.sleep(3)
         global attendees_selected
 
         try:
@@ -79,70 +77,74 @@ class LinkedInInviter:
                 # Ensure the internet connection is available before proceeding
                 wait_for_internet_connection()
 
-                # Click the button to load more profiles first to refresh the page
-                try:
-                    load_more_button = WebDriverWait(self.driver, 10).until(
-                        EC.element_to_be_clickable((By.XPATH, '//div[@class="display-flex p5"]/button/span[@class="artdeco-button__text"]'))
-                    )
-                    self.driver.execute_script("arguments[0].click();", load_more_button)
-                    logging.info("Clicked the button to load more profiles.")
-                    time.sleep(5)  # Allow some time for new profiles to load
-
-                except TimeoutException:
-                    logging.warning("Load more button not found. Assuming all profiles are loaded or another issue occurred.")
-                    break  # Exit the loop if the button is not found
-
-                # Ensure the internet connection is available before selecting profiles
-                wait_for_internet_connection()
-
                 # After loading more profiles, select attendees
                 attendee_elements = container.find_elements(By.XPATH, './/input[@aria-selected="false"]')
 
-                for attendee_element in attendee_elements:
-                    # Ensure the internet connection is available before each profile selection
-                    wait_for_internet_connection()
+                if len(attendee_elements) > 0:
+                    for attendee_element in attendee_elements:
+                        # Ensure the internet connection is available before each profile selection
+                        wait_for_internet_connection()
 
-                    try:
-                        invited_status_elements = attendee_element.find_elements(By.XPATH, ".//ancestor::li//div[@class='invitee-picker-connections-result-item__status t-14 t-black--light t-bold mt2']")
+                        try:
+                            invited_status_elements = attendee_element.find_elements(By.XPATH, ".//ancestor::li//div[@class='invitee-picker-connections-result-item__status t-14 t-black--light t-bold mt2']")
 
-                        if invited_status_elements and invited_status_elements[0].text.strip() == "Invited":
+                            if invited_status_elements and invited_status_elements[0].text.strip() == "Invited":
+                                continue
+
+                            attendee_name_element = attendee_element.find_element(By.XPATH, ".//ancestor::li//div[@class='flex-1 inline-block align-self-center pl2 mr5']/div[1]")
+                            attendee_name = attendee_name_element.text.strip()
+
+                            attendee_headline_element = attendee_element.find_element(By.XPATH, ".//ancestor::li//div[@class='flex-1 inline-block align-self-center pl2 mr5']/div[2]")
+                            attendee_headline = attendee_headline_element.text.strip()
+
+                            
+
+                            if (attendee_name, attendee_headline) not in self.invited_attendees:
+                                self.driver.execute_script("arguments[0].click();", attendee_element)
+
+                                if attendee_element.get_attribute("aria-selected") == "true":
+                                    self.invited_attendees.add(attendee_name)
+                                    new_invites.append((attendee_name, attendee_headline, time.strftime('%Y-%m-%d %H:%M:%S')))
+                                    self.attendees_selected += 1
+
+                                    logging.info(f"Profile selected: {attendee_name}, Total selected: {self.attendees_selected}")
+
+                            # Check if we have selected the maximum number of profiles
+                            if self.attendees_selected >= max_invites:
+                                logging.info(f"Stopping selection. Reached max_invites: {self.attendees_selected}")
+                                break
+
+                        except Exception as e:
+                            logging.error(f"Encountered an issue with an element: {e}")
                             continue
 
-                        attendee_name_element = attendee_element.find_element(By.XPATH, ".//ancestor::li//div[@class='flex-1 inline-block align-self-center pl2 mr5']/div[1]")
-                        attendee_name = attendee_name_element.text.strip()
-
-                        attendee_headline_element = attendee_element.find_element(By.XPATH, ".//ancestor::li//div[@class='flex-1 inline-block align-self-center pl2 mr5']/div[2]")
-                        attendee_headline = attendee_headline_element.text.strip()
-
-                        time.sleep(2)
-
-                        if attendee_name not in self.invited_attendees:
-                            self.driver.execute_script("arguments[0].click();", attendee_element)
-
-                            if attendee_element.get_attribute("aria-selected") == "true":
-                                self.invited_attendees.add(attendee_name)
-                                new_invites.append((attendee_name, attendee_headline, time.strftime('%Y-%m-%d %H:%M:%S')))
-                                self.attendees_selected += 1
-
-                                logging.info(f"Profile selected: {attendee_name}, Total selected: {self.attendees_selected}")
-                        
-                        if self.attendees_selected >= max_invites:
-                            logging.info(f"Stopping selection. Total profiles selected: {self.attendees_selected}")
-                            break
+                else:
+                    # If no new profiles are found, attempt to load more
+                    try:
+                        load_more_button = WebDriverWait(self.driver, 10).until(
+                            EC.element_to_be_clickable((By.XPATH, '//div[@class="display-flex p5"]/button/span[@class="artdeco-button__text"]'))
+                        )
+                        self.driver.execute_script("arguments[0].click();", load_more_button)
+                        logging.info("Clicked the button to load more profiles.")
+                        time.sleep(2)  # Allow some time for new profiles to load
 
                     except Exception as e:
-                        logging.error(f"Encountered an issue with an element: {e}")
-                        continue
+                        logging.warning("Load more button not found. Assuming all profiles are loaded or maximum invites reached.")
+                        # Exit the loop if the button is not found, assuming no more profiles can be loaded
+                        break
 
-            self.save_new_invites(new_invites)
-            logging.info(f"Finished inviting {self.attendees_selected} profiles.")
+
+            # After selecting profiles, click the invite button
+            if self.attendees_selected > 0:
+                self.click_invite_button(new_invites)
+
             return self.attendees_selected
 
         except TimeoutException:
             logging.error("Element not found within the given time")
             return 0
 
-    def click_invite_button(self):
+    def click_invite_button(self, new_invites):
         try:
             invite_button = WebDriverWait(self.driver, 10).until(
                 EC.element_to_be_clickable((By.XPATH, '/html/body/div[3]/div/div/div[2]/div/div[2]/div/button/span'))
@@ -152,17 +154,52 @@ class LinkedInInviter:
             logging.info("Invite button clicked.")
 
             time.sleep(5)
-            
+
+            # Check for the confirmation popup
+            try:
+                confirmation_popup = WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located((By.XPATH, '//div[@class="artdeco-toast-item__content"]/p/span'))
+                )
+                confirmation_text = confirmation_popup.text.strip()
+                if "invited to event" in confirmation_text.lower():
+                    # If the confirmation is found, save the invites to the CSV
+                    logging.info(f"Invitation confirmed: {confirmation_text}")
+                    self.save_new_invites(new_invites)
+                    logging.info(f"Successfully invited {len(new_invites)} new attendees.")
+                    
+                elif "something went wrong" in confirmation_text.lower():
+                    logging.error(f"Error during invitation: {confirmation_text}")
+                    self.attendees_selected = 0
+                    
+                    # Click the close button for the error popup
+                    close_button = WebDriverWait(self.driver, 10).until(
+                        EC.element_to_be_clickable((By.XPATH, '//div[@id="artdeco-modal-outlet"]/div/div/button'))
+                    )
+                    self.driver.execute_script("arguments[0].click();", close_button)
+                    logging.info("Error popup closed.")
+
+                    # Click the discard button in the confirmation dialog
+                    discard_button = WebDriverWait(self.driver, 10).until(
+                        EC.element_to_be_clickable((By.XPATH, '//button[@class="artdeco-button artdeco-button--2 artdeco-button--primary ember-view artdeco-modal__confirm-dialog-btn"]'))
+                    )
+                    self.driver.execute_script("arguments[0].click();", discard_button)
+                    logging.info("Invitation discarded due to error. No attendees were invited.")
+
+            except TimeoutException:
+                logging.error("Confirmation popup not found. Invites may not have been sent successfully.")
+                self.attendees_selected = 0
+
         except Exception as e:
             logging.error(f"Error clicking the Invite button: {e}")
+            self.attendees_selected = 0
+
 
     def invite_attendees(self, max_invites=5):
         self.attendees_selected = 0  # Reset the variable at the start of the method
         if self.click_invite_list_item():
             self.select_profiles_to_invite(max_invites=max_invites)
             if self.attendees_selected > 0:
-                self.click_invite_button()
-                logging.info(f"Invited {self.attendees_selected} new attendees.")
+                logging.info(f"Successfully invited {self.attendees_selected} new attendees.")
             else:
                 logging.info("No new attendees were selected.")
         else:
