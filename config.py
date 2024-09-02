@@ -28,5 +28,3 @@ os.makedirs(CSV_DIR, exist_ok=True)
 # Path to the completed events file
 COMPLETED_EVENTS_FILE = os.path.join(os.path.dirname(__file__), "completed_events.txt")
 
-
-
