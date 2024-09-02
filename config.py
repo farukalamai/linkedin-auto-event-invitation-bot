@@ -2,8 +2,8 @@
 import os
 from datetime import datetime
 
-LINKEDIN_EMAIL = "mdfarukt222@gmail.com"  # Replace with your LinkedIn email
-LINKEDIN_PASSWORD = "M22f&farrk@32"  # Replace with your LinkedIn password
+LINKEDIN_EMAIL = "your_email@example.com"  # Replace with your LinkedIn email
+LINKEDIN_PASSWORD = "your_password"  # Replace with your LinkedIn password
 
 # List of event URLs
 LINKEDIN_EVENT_URLS = [
